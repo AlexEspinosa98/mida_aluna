@@ -1,16 +1,14 @@
+// Valores exactos que acepta el backend (contrato JSON de POST /api/v1/evaluaciones/).
 export const SEXO_OPTIONS = [
   { value: "masculino", label: "Masculino" },
   { value: "femenino", label: "Femenino" },
-  { value: "intersexual", label: "Intersexual" },
-  { value: "no_reportado", label: "No reportado" },
 ];
 
+// El backend solo reconoce estos 3 valores para paciente.etnia (kogui/arhuaco/ninguna).
 export const PUEBLO_INDIGENA_OPTIONS = [
-  { value: "kaggaba", label: "Kággaba (Kogi)" },
-  { value: "wiwa", label: "Wiwa" },
+  { value: "kogui", label: "Kággaba (Kogi)" },
   { value: "arhuaco", label: "Iku (Arhuaco)" },
-  { value: "kankuamo", label: "Kankuamo" },
-  { value: "otro", label: "Otro pueblo de la Sierra" },
+  { value: "ninguna", label: "Ninguna / No aplica" },
 ];
 
 export const DEPARTAMENTO_OPTIONS = [
@@ -21,17 +19,13 @@ export const DEPARTAMENTO_OPTIONS = [
 
 // Lengua principal disponible según el pueblo indígena seleccionado.
 // La primera opción de cada lista es la lengua propia del pueblo (default al cambiar de pueblo).
+// lengua_principal es texto libre para el backend (sin tabla de valores válidos):
+// estas listas son solo sugerencias de UI por pueblo, no restricciones del contrato.
 export const LENGUA_OPTIONS_BY_PUEBLO: Record<string, { value: string; label: string }[]> = {
-  kaggaba: [
+  kogui: [
     { value: "kaggaba", label: "Kággaba (Kogi)" },
     { value: "espanol", label: "Español" },
     { value: "bilingue", label: "Bilingüe Kággaba - Español" },
-    { value: "otra", label: "Otra lengua serrana" },
-  ],
-  wiwa: [
-    { value: "wiwa", label: "Wiwa (Damana)" },
-    { value: "espanol", label: "Español" },
-    { value: "bilingue", label: "Bilingüe Wiwa - Español" },
     { value: "otra", label: "Otra lengua serrana" },
   ],
   arhuaco: [
@@ -40,26 +34,20 @@ export const LENGUA_OPTIONS_BY_PUEBLO: Record<string, { value: string; label: st
     { value: "bilingue", label: "Bilingüe Ikʉ - Español" },
     { value: "otra", label: "Otra lengua serrana" },
   ],
-  kankuamo: [
-    { value: "kankui", label: "Kankuí (en revitalización)" },
+  ninguna: [
     { value: "espanol", label: "Español" },
-    { value: "bilingue", label: "Bilingüe Kankuí - Español" },
-    { value: "otra", label: "Otra lengua serrana" },
-  ],
-  otro: [
-    { value: "espanol", label: "Español" },
-    { value: "otra", label: "Otra lengua de la Sierra" },
+    { value: "otra", label: "Otra lengua" },
   ],
 };
 
 export function getLenguaOptions(puebloIndigena: string) {
-  return LENGUA_OPTIONS_BY_PUEBLO[puebloIndigena] ?? LENGUA_OPTIONS_BY_PUEBLO.otro;
+  return LENGUA_OPTIONS_BY_PUEBLO[puebloIndigena] ?? LENGUA_OPTIONS_BY_PUEBLO.ninguna;
 }
 
+// El backend solo acepta de_pie/acostado (alias "pie" aceptado tal cual); sin opción "no reportado".
 export const TIPO_MEDICION_TALLA_OPTIONS = [
   { value: "acostado", label: "Longitud acostado (lactantes / menor 2 años)" },
   { value: "pie", label: "Talla de pie" },
-  { value: "no_reportado", label: "No reportado" },
 ];
 
 export const TRI_STATE_OPTIONS = [
@@ -72,7 +60,6 @@ export const NIVEL_ACTIVIDAD_OPTIONS = [
   { value: "bajo", label: "Bajo / reposo obligado" },
   { value: "moderado", label: "Moderado" },
   { value: "alto", label: "Alto" },
-  { value: "no_reportado", label: "No reportado" },
 ];
 
 export const STEPS = [

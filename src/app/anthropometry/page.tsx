@@ -23,9 +23,10 @@ import {
   SYMPTOMS,
 } from "@/lib/anthropometry-options";
 import { generateCaseCode } from "@/lib/generate-case-code";
+import { buildEvaluacionPayload } from "@/lib/build-evaluacion-payload";
 import AuthGuard from "@/components/AuthGuard";
 import { useAuth } from "@/context/AuthContext";
-import { apiFetch, UnauthorizedError } from "@/lib/api";
+import { apiFetch, extractErrorMessage, UnauthorizedError } from "@/lib/api";
 
 type SubmitState = "idle" | "sending" | "success" | "error";
 
@@ -63,7 +64,7 @@ function AnthropometryForm() {
     showToast(`Código regenerado: ${code}`);
   }
 
-  function handlePuebloChange(pueblo: string) {
+  function handlePuebloChange(pueblo: AnthropometryFormData["puebloIndigena"]) {
     const lenguaOptions = getLenguaOptions(pueblo);
     setForm((prev) => ({ ...prev, puebloIndigena: pueblo, lenguaPrincipal: lenguaOptions[0].value }));
   }
@@ -81,11 +82,14 @@ function AnthropometryForm() {
     e.preventDefault();
     setSubmitState("sending");
     try {
+      const payload = buildEvaluacionPayload(form);
       const res = await apiFetch("/api/v1/evaluaciones/", user?.token ?? null, {
         method: "POST",
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, `No se pudo generar el reporte (HTTP ${res.status}).`));
+      }
       setSubmitState("success");
       showToast("Reporte biocultural generado correctamente");
     } catch (err) {
@@ -96,7 +100,7 @@ function AnthropometryForm() {
       }
       console.error(err);
       setSubmitState("error");
-      showToast("No se pudo enviar el reporte. Intente nuevamente.");
+      showToast(err instanceof Error ? err.message : "No se pudo enviar el reporte. Intente nuevamente.");
     }
   }
 
@@ -183,6 +187,14 @@ function AnthropometryForm() {
               hint="Campo abierto: determina el nivel de síntesis ALUNA IA."
               className="md:col-span-4"
             />
+            <TextAreaField
+              id="notasAdministrativas"
+              label="Notas administrativas"
+              value={form.notasAdministrativas}
+              onChange={(v) => set("notasAdministrativas", v)}
+              placeholder="ej. Brigada territorial acompañada por cabildo local, comunidad de Seykúkui."
+              className="md:col-span-12"
+            />
             <div className="md:col-span-12 flex justify-end -mt-2">
               <button
                 type="button"
@@ -209,7 +221,15 @@ function AnthropometryForm() {
               value={form.nombres}
               onChange={(v) => set("nombres", v)}
               placeholder="ej. Samin K."
-              className="md:col-span-6"
+              className="md:col-span-4"
+            />
+            <TextField
+              id="apellidos"
+              label="Apellidos"
+              value={form.apellidos}
+              onChange={(v) => set("apellidos", v)}
+              placeholder="ej. Protegido por soberanía CARE"
+              className="md:col-span-4"
             />
             <TextField
               id="edad"
@@ -222,11 +242,12 @@ function AnthropometryForm() {
               min={0}
               unit="meses"
               hint="Siempre en meses (0-5 años)."
-              className="md:col-span-3"
+              className="md:col-span-4"
             />
             <SelectField
               id="sexo"
               label="Sexo"
+              required
               value={form.sexo}
               onChange={(v) => set("sexo", v as AnthropometryFormData["sexo"])}
               options={SEXO_OPTIONS}
@@ -237,7 +258,7 @@ function AnthropometryForm() {
               label="Pueblo indígena"
               required
               value={form.puebloIndigena}
-              onChange={handlePuebloChange}
+              onChange={(v) => handlePuebloChange(v as AnthropometryFormData["puebloIndigena"])}
               options={PUEBLO_INDIGENA_OPTIONS}
               className="md:col-span-4"
             />
@@ -247,7 +268,7 @@ function AnthropometryForm() {
               value={form.comunidad}
               onChange={(v) => set("comunidad", v)}
               placeholder="ej. Seykúkui, Mamankana, Cherúa"
-              className="md:col-span-4"
+              className="md:col-span-5"
             />
             <SelectField
               id="departamento"
@@ -264,7 +285,7 @@ function AnthropometryForm() {
               value={form.municipio}
               onChange={(v) => set("municipio", v)}
               placeholder="ej. Santa Marta / Ciénaga"
-              className="md:col-span-6"
+              className="md:col-span-4"
             />
             <TextField
               id="cuidadorPrincipal"
@@ -272,7 +293,7 @@ function AnthropometryForm() {
               value={form.cuidadorPrincipal}
               onChange={(v) => set("cuidadorPrincipal", v)}
               placeholder="ej. Madre (Saga) / Abuela"
-              className="md:col-span-6"
+              className="md:col-span-4"
             />
             <SelectField
               id="lenguaPrincipal"
@@ -419,7 +440,15 @@ function AnthropometryForm() {
               value={form.balanzaCalibrada}
               onChange={(v) => set("balanzaCalibrada", v as AnthropometryFormData["balanzaCalibrada"])}
               options={TRI_STATE_OPTIONS}
-              className="md:col-span-6"
+              className="md:col-span-4"
+            />
+            <SelectField
+              id="instrumentosValidados"
+              label="Instrumentos validados"
+              value={form.instrumentosValidados}
+              onChange={(v) => set("instrumentosValidados", v as AnthropometryFormData["instrumentosValidados"])}
+              options={TRI_STATE_OPTIONS}
+              className="md:col-span-4"
             />
             <SelectField
               id="medicionRepetida"
@@ -427,7 +456,7 @@ function AnthropometryForm() {
               value={form.medicionRepetida}
               onChange={(v) => set("medicionRepetida", v as AnthropometryFormData["medicionRepetida"])}
               options={TRI_STATE_OPTIONS}
-              className="md:col-span-6"
+              className="md:col-span-4"
             />
             <TextAreaField
               id="observacionesCalidad"

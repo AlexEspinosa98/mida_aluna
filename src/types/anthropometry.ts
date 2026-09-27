@@ -9,9 +9,10 @@ export interface AnthropometryFormData {
 
   // 2. Datos del menor
   nombres: string;
+  apellidos: string;
   edad: string;
-  sexo: "masculino" | "femenino" | "intersexual" | "no_reportado";
-  puebloIndigena: string;
+  sexo: "masculino" | "femenino";
+  puebloIndigena: "kogui" | "arhuaco" | "ninguna";
   comunidad: string;
   municipio: string;
   departamento: string;
@@ -22,7 +23,7 @@ export interface AnthropometryFormData {
   // 3. Mediciones antropométricas
   pesoKg: string;
   tallaCm: string;
-  tipoMedicionTalla: "pie" | "acostado" | "no_reportado";
+  tipoMedicionTalla: "pie" | "acostado";
   muacCm: string;
   perimetroCefalico: string;
   perimetroCintura: string;
@@ -32,6 +33,7 @@ export interface AnthropometryFormData {
 
   // 4. Calidad de medición
   balanzaCalibrada: TriState;
+  instrumentosValidados: TriState;
   medicionRepetida: TriState;
   observacionesCalidad: string;
 
@@ -56,7 +58,7 @@ export interface AnthropometryFormData {
   accesoAguaSegura: TriState;
 
   // 7. Actividad física
-  nivelActividad: "bajo" | "moderado" | "alto" | "no_reportado";
+  nivelActividad: "bajo" | "moderado" | "alto";
   actividadesDiarias: string;
   limitaciones: string;
 
@@ -76,9 +78,10 @@ export const EMPTY_FORM: AnthropometryFormData = {
   notasAdministrativas: "",
 
   nombres: "",
+  apellidos: "",
   edad: "",
   sexo: "masculino",
-  puebloIndigena: "kaggaba",
+  puebloIndigena: "kogui",
   comunidad: "",
   municipio: "",
   departamento: "magdalena",
@@ -97,6 +100,7 @@ export const EMPTY_FORM: AnthropometryFormData = {
   fechaMedicion: "",
 
   balanzaCalibrada: "no_reportado",
+  instrumentosValidados: "no_reportado",
   medicionRepetida: "no_reportado",
   observacionesCalidad: "",
 
@@ -132,15 +136,16 @@ export const EMPTY_FORM: AnthropometryFormData = {
 
 export const DEMO_FORM: AnthropometryFormData = {
   codigoCaso: "KAG-2024-0581",
-  fechaReporte: new Date().toLocaleDateString("es-CO"),
+  fechaReporte: new Date().toISOString().split("T")[0],
   objetivoReporte: "Seguimiento nutricional bimensual",
   notasAdministrativas:
     "Brigada territorial acompañada por cabildo local, comunidad de Seykúkui.",
 
-  nombres: "Samin K. (Protegido por soberanía CARE)",
+  nombres: "Samin K.",
+  apellidos: "Protegido por soberanía CARE",
   edad: "24",
   sexo: "masculino",
-  puebloIndigena: "kaggaba",
+  puebloIndigena: "kogui",
   comunidad: "Seykúkui",
   municipio: "Santa Marta",
   departamento: "magdalena",
@@ -159,6 +164,7 @@ export const DEMO_FORM: AnthropometryFormData = {
   fechaMedicion: new Date().toISOString().split("T")[0],
 
   balanzaCalibrada: "si",
+  instrumentosValidados: "si",
   medicionRepetida: "si",
   observacionesCalidad:
     "Medición tomada en bohío tradicional con piso de madera irregular; se usó base rígida nivelada. Niño cooperador.",
