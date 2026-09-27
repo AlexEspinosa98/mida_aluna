@@ -2,12 +2,13 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { login as apiLogin } from "@/lib/api";
+import { UserRole } from "@/types/user";
 
 interface AuthUser {
   token: string;
   username: string;
   nombre: string;
-  rol: string;
+  rol: UserRole;
 }
 
 interface AuthContextValue {

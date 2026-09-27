@@ -9,7 +9,12 @@ export default function SiteHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  const navItems = user ? [{ href: "/anthropometry", label: "Nuevo reporte antropométrico" }] : [];
+  const navItems = user
+    ? [
+        { href: "/anthropometry", label: "Nuevo reporte antropométrico" },
+        ...(user.rol === "superadmin" ? [{ href: "/admin", label: "Usuarios" }] : []),
+      ]
+    : [];
 
   function handleLogout() {
     logout();

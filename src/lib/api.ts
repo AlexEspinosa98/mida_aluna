@@ -1,3 +1,5 @@
+import type { UserRole } from "@/types/user";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "");
 
 export class UnauthorizedError extends Error {
@@ -23,9 +25,30 @@ export async function apiFetch(path: string, token: string | null, init: Request
   if (token) headers.set("Authorization", `Token ${token}`);
   if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
-  const res = await fetch(`${base}${path}`, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${base}${path}`, { ...init, headers });
+  } catch {
+    throw new Error(
+      "No se pudo contactar al servidor (red caída o el backend no permite peticiones desde este origen)."
+    );
+  }
   if (res.status === 401) throw new UnauthorizedError();
   return res;
+}
+
+/** Convierte un error de validación de DRF ({campo: [msg]} o {detail: msg}) en un mensaje legible. */
+export async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const body = await res.json();
+    if (typeof body?.detail === "string") return body.detail;
+    const fieldErrors = Object.entries(body)
+      .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(" ") : msgs}`)
+      .join(" · ");
+    return fieldErrors || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 /**
@@ -46,7 +69,7 @@ export interface LoginResponse {
   token: string;
   username: string;
   nombre: string;
-  rol: string;
+  rol: UserRole;
 }
 
 export async function login(username: string, password: string): Promise<LoginResponse> {
