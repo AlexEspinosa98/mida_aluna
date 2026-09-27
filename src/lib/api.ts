@@ -58,11 +58,26 @@ export async function extractErrorMessage(res: Response, fallback: string): Prom
 export async function fetchAuthenticatedPdf(url: string, token: string | null): Promise<string> {
   const headers = new Headers();
   if (token) headers.set("Authorization", `Token ${token}`);
-  const res = await fetch(url, { headers });
+  let res: Response;
+  try {
+    res = await fetch(url, { headers });
+  } catch {
+    throw new Error("No se pudo contactar al servidor para descargar el PDF.");
+  }
   if (res.status === 401) throw new UnauthorizedError();
   if (!res.ok) throw new Error(`No se pudo descargar el PDF (HTTP ${res.status})`);
   const blob = await res.blob();
   return URL.createObjectURL(blob);
+}
+
+/** Dispara la descarga de una object URL (blob:) como archivo, sin abrir pestaña nueva. */
+export function triggerBlobDownload(blobUrl: string, filename: string) {
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 export interface LoginResponse {

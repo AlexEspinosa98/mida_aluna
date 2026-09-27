@@ -26,7 +26,14 @@ import { generateCaseCode } from "@/lib/generate-case-code";
 import { buildEvaluacionPayload } from "@/lib/build-evaluacion-payload";
 import AuthGuard from "@/components/AuthGuard";
 import { useAuth } from "@/context/AuthContext";
-import { apiFetch, extractErrorMessage, UnauthorizedError } from "@/lib/api";
+import {
+  apiFetch,
+  extractErrorMessage,
+  fetchAuthenticatedPdf,
+  triggerBlobDownload,
+  UnauthorizedError,
+} from "@/lib/api";
+import { EvaluacionResponse } from "@/types/evaluacion-response";
 
 type SubmitState = "idle" | "sending" | "success" | "error";
 
@@ -36,6 +43,8 @@ function AnthropometryForm() {
   const [form, setForm] = useState<AnthropometryFormData>(EMPTY_FORM);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [toast, setToast] = useState<string | null>(null);
+  const [result, setResult] = useState<EvaluacionResponse | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<"tecnico" | "familiar" | null>(null);
 
   // El código se genera solo en el cliente (UUID) para evitar un desajuste de hidratación
   // entre el render de servidor y el del navegador.
@@ -78,9 +87,27 @@ function AnthropometryForm() {
     }
   }
 
+  async function downloadPdf(kind: "tecnico" | "familiar", url: string, codigoCaso: string) {
+    setDownloadingPdf(kind);
+    try {
+      const blobUrl = await fetchAuthenticatedPdf(url, user?.token ?? null);
+      triggerBlobDownload(blobUrl, `mida-reporte-${kind}-${codigoCaso}.pdf`);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        logout();
+        router.replace("/medical-access");
+        return;
+      }
+      showToast(err instanceof Error ? err.message : `No se pudo descargar el reporte ${kind}.`);
+    } finally {
+      setDownloadingPdf(null);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitState("sending");
+    setResult(null);
     try {
       const payload = buildEvaluacionPayload(form);
       const res = await apiFetch("/api/v1/evaluaciones/", user?.token ?? null, {
@@ -90,8 +117,19 @@ function AnthropometryForm() {
       if (!res.ok) {
         throw new Error(await extractErrorMessage(res, `No se pudo generar el reporte (HTTP ${res.status}).`));
       }
+      const data: EvaluacionResponse = await res.json();
+      setResult(data);
       setSubmitState("success");
       showToast("Reporte biocultural generado correctamente");
+
+      // Descarga automática de ambos PDF apenas están listos; si alguno falla o no viene
+      // en la respuesta, el panel de resultado deja los botones para bajarlo manualmente.
+      if (data.reporte_pdf_url) {
+        void downloadPdf("tecnico", data.reporte_pdf_url, data.codigo_caso);
+      }
+      if (data.reporte_familiar_pdf_url) {
+        void downloadPdf("familiar", data.reporte_familiar_pdf_url, data.codigo_caso);
+      }
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         logout();
@@ -718,6 +756,62 @@ function AnthropometryForm() {
             </div>
           </div>
         </form>
+
+        {result && (
+          <div className="w-full bg-surface-container-lowest rounded-2xl p-space-lg shadow-md flex flex-col gap-space-md border border-primary/20">
+            <div className="flex items-center justify-between gap-space-md flex-wrap">
+              <div className="flex items-center gap-space-sm">
+                <span className="material-symbols-outlined text-headline-sm text-primary">task_alt</span>
+                <div>
+                  <h2 className="font-heading text-headline-sm text-primary">
+                    Reporte generado — {result.codigo_caso}
+                  </h2>
+                  <p className="font-body text-body-sm text-on-surface-variant">
+                    Estado: {result.estado}
+                  </p>
+                </div>
+              </div>
+              {result.alerta_critica && (
+                <span className="px-space-sm py-1 rounded-full bg-status-critical-bg text-status-critical font-body text-label-sm">
+                  Alerta crítica — requiere remisión
+                </span>
+              )}
+            </div>
+
+            {result.reporte?.resumen_clinico && (
+              <p className="font-body text-body-sm text-on-surface-variant">
+                {result.reporte.resumen_clinico}
+              </p>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-space-sm">
+              <button
+                type="button"
+                disabled={!result.reporte_pdf_url || downloadingPdf === "tecnico"}
+                onClick={() =>
+                  result.reporte_pdf_url &&
+                  downloadPdf("tecnico", result.reporte_pdf_url, result.codigo_caso)
+                }
+                className="inline-flex items-center justify-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary font-body text-label-lg px-space-lg py-space-sm rounded-lg transition-colors disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-title-md">description</span>
+                {downloadingPdf === "tecnico" ? "Descargando…" : "Reporte técnico (PDF)"}
+              </button>
+              <button
+                type="button"
+                disabled={!result.reporte_familiar_pdf_url || downloadingPdf === "familiar"}
+                onClick={() =>
+                  result.reporte_familiar_pdf_url &&
+                  downloadPdf("familiar", result.reporte_familiar_pdf_url, result.codigo_caso)
+                }
+                className="inline-flex items-center justify-center gap-space-xs bg-surface-container hover:bg-surface-container-high text-on-surface font-body text-label-lg px-space-lg py-space-sm rounded-lg transition-colors disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-title-md">family_restroom</span>
+                {downloadingPdf === "familiar" ? "Descargando…" : "Reporte familiar (PDF)"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
