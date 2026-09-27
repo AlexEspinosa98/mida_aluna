@@ -4,16 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard Territorial" },
-  { href: "/anthropometry", label: "Portal Abierto / Valoración Antropométrica" },
-  { href: "/medical-access", label: "Acceso Médico / Clínico Especializado" },
-];
-
 export default function SiteHeader() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const router = useRouter();
+
+  const navItems = user ? [{ href: "/anthropometry", label: "Nuevo reporte antropométrico" }] : [];
 
   function handleLogout() {
     logout();
@@ -34,8 +30,8 @@ export default function SiteHeader() {
           </div>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-space-sm p-space-xs bg-surface-container rounded-xl">
-          {NAV_ITEMS.map((item) => {
+        <nav className="hidden lg:flex items-center gap-space-sm p-space-xs bg-surface-container rounded-xl empty:hidden">
+          {navItems.map((item) => {
             const active = pathname?.startsWith(item.href);
             return (
               <Link
