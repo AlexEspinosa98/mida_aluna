@@ -11,6 +11,7 @@ export default function SiteHeader() {
 
   const navItems = user
     ? [
+        { href: "/dashboard", label: "Dashboard" },
         { href: "/anthropometry", label: "Nuevo reporte antropométrico" },
         ...(user.rol === "superadmin" ? [{ href: "/admin", label: "Usuarios" }] : []),
       ]
