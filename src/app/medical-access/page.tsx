@@ -1,10 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function MedicalAccessPage() {
-  const [mode, setMode] = useState<"medico" | "cabildo">("medico");
+  const { login, user } = useAuth();
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) router.replace("/anthropometry");
+  }, [user, router]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await login(username, password);
+      router.push("/anthropometry");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo iniciar sesión.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="w-full max-w-xl mx-auto px-gutter py-space-xl flex flex-col gap-space-lg">
@@ -24,76 +48,57 @@ export default function MedicalAccessPage() {
         </p>
       </div>
 
-      <div className="w-full bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm flex flex-col gap-space-md">
-        <div className="flex bg-surface-container rounded-xl p-space-xs gap-space-xs">
-          <button
-            type="button"
-            onClick={() => setMode("medico")}
-            className={`flex-1 inline-flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-lg font-body text-label-lg transition-colors ${
-              mode === "medico" ? "bg-primary text-on-primary" : "text-on-surface-variant"
-            }`}
-          >
-            <span className="material-symbols-outlined text-title-md">stethoscope</span>
-            Médico / ReTHUS
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("cabildo")}
-            className={`flex-1 inline-flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-lg font-body text-label-lg transition-colors ${
-              mode === "cabildo" ? "bg-primary text-on-primary" : "text-on-surface-variant"
-            }`}
-          >
-            <span className="material-symbols-outlined text-title-md">shield_person</span>
-            Cabildo / Promotor
-          </button>
-        </div>
-
+      <form
+        onSubmit={handleSubmit}
+        className="w-full bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm flex flex-col gap-space-md"
+      >
         <div className="flex flex-col gap-space-xs">
-          <label htmlFor="credencial" className="font-body text-label-lg text-on-surface">
-            {mode === "medico" ? "Registro médico ReTHUS o correo clínico" : "Correo institucional del cabildo"}
+          <label htmlFor="username" className="font-body text-label-lg text-on-surface">
+            Usuario
           </label>
           <input
-            id="credencial"
+            id="username"
             type="text"
-            placeholder={mode === "medico" ? "dr.intercultural@mida.gov.co" : "cabildo@mida.gov.co"}
+            autoComplete="username"
+            required
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="dr.intercultural"
             className="w-full bg-surface-container-low text-on-surface font-body text-body-md px-space-md py-space-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-primary shadow-inner"
           />
         </div>
 
         <div className="flex flex-col gap-space-xs">
-          <label htmlFor="clave" className="font-body text-label-lg text-on-surface">
-            Clave criptográfica institucional
+          <label htmlFor="password" className="font-body text-label-lg text-on-surface">
+            Contraseña
           </label>
           <input
-            id="clave"
+            id="password"
             type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••••••"
             className="w-full bg-surface-container-low text-on-surface font-body text-body-md px-space-md py-space-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-primary shadow-inner"
           />
         </div>
 
+        {error && (
+          <p className="font-body text-body-sm text-error bg-error-container/40 rounded-lg px-space-md py-space-sm">
+            {error}
+          </p>
+        )}
+
         <button
-          type="button"
-          className="w-full inline-flex items-center justify-center gap-space-sm bg-primary hover:bg-primary-container text-on-primary font-heading text-headline-sm px-space-lg py-space-sm rounded-xl transition-colors shadow-md"
+          type="submit"
+          disabled={submitting}
+          className="w-full inline-flex items-center justify-center gap-space-sm bg-primary hover:bg-primary-container text-on-primary font-heading text-headline-sm px-space-lg py-space-sm rounded-xl transition-colors shadow-md disabled:opacity-60"
         >
           <span className="material-symbols-outlined text-headline-sm">shield</span>
-          Ingresar al panel clínico experto
+          {submitting ? "Ingresando…" : "Ingresar al panel clínico experto"}
         </button>
-
-        <p className="font-body text-body-sm text-on-surface-variant text-center">
-          La autenticación real se conectará al backend cuando esté disponible.
-        </p>
-      </div>
-
-      <div className="text-center">
-        <Link
-          href="/anthropometry"
-          className="inline-flex items-center gap-space-xs text-secondary hover:text-primary font-body text-label-lg transition-colors"
-        >
-          <span className="material-symbols-outlined text-title-md">medical_services</span>
-          ¿Requiere valoración sin credencial? Portal abierto antropométrico →
-        </Link>
-      </div>
+      </form>
     </div>
   );
 }

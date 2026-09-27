@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,8 +25,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body className="min-h-full flex flex-col bg-surface font-body text-body-md text-on-surface">
-        <SiteHeader />
-        <main className="w-full pt-20 bg-surface flex-1">{children}</main>
+        <AuthProvider>
+          <SiteHeader />
+          <main className="w-full pt-20 bg-surface flex-1">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard Territorial" },
@@ -11,6 +12,13 @@ const NAV_ITEMS = [
 
 export default function SiteHeader() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  function handleLogout() {
+    logout();
+    router.push("/medical-access");
+  }
 
   return (
     <header className="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(43,43,43,0.04)]">
@@ -47,15 +55,35 @@ export default function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-space-md">
-          <div className="hidden sm:flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-surface-container-high">
-            <span className="w-2 h-2 rounded-full bg-surface-tint animate-pulse" />
-            <span className="font-body text-label-sm text-on-surface-variant">
-              Sincronizado CARE
-            </span>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-heading text-label-md">
-            KA
-          </div>
+          {user ? (
+            <>
+              <div className="hidden sm:flex flex-col items-end leading-tight">
+                <span className="font-body text-label-lg text-on-surface">{user.nombre}</span>
+                <span className="font-body text-label-sm text-tertiary-container uppercase tracking-wider">
+                  {user.rol}
+                </span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-heading text-label-md shrink-0">
+                {user.nombre.slice(0, 2).toUpperCase()}
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Cerrar sesión"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant transition-colors"
+              >
+                <span className="material-symbols-outlined text-title-md">logout</span>
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/medical-access"
+              className="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-primary text-on-primary font-body text-label-lg hover:bg-primary-container transition-colors"
+            >
+              <span className="material-symbols-outlined text-title-md">login</span>
+              <span className="hidden sm:inline">Acceso médico</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   SectionCard,
   TextField,
@@ -22,10 +23,15 @@ import {
   SYMPTOMS,
 } from "@/lib/anthropometry-options";
 import { generateCaseCode } from "@/lib/generate-case-code";
+import AuthGuard from "@/components/AuthGuard";
+import { useAuth } from "@/context/AuthContext";
+import { apiFetch, UnauthorizedError } from "@/lib/api";
 
 type SubmitState = "idle" | "sending" | "success" | "error";
 
-export default function AnthropometryPage() {
+function AnthropometryForm() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const [form, setForm] = useState<AnthropometryFormData>(EMPTY_FORM);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [toast, setToast] = useState<string | null>(null);
@@ -75,22 +81,19 @@ export default function AnthropometryPage() {
     e.preventDefault();
     setSubmitState("sending");
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (!apiBase) {
-        console.log("Payload antropométrico (sin backend configurado):", form);
-        setSubmitState("success");
-        showToast("Reporte listo (configure NEXT_PUBLIC_API_BASE_URL para enviarlo al backend)");
-        return;
-      }
-      const res = await fetch(`${apiBase}/anthropometry`, {
+      const res = await apiFetch("/api/v1/evaluaciones/", user?.token ?? null, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setSubmitState("success");
       showToast("Reporte biocultural generado correctamente");
     } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        logout();
+        router.replace("/medical-access");
+        return;
+      }
       console.error(err);
       setSubmitState("error");
       showToast("No se pudo enviar el reporte. Intente nuevamente.");
@@ -688,5 +691,13 @@ export default function AnthropometryPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AnthropometryPage() {
+  return (
+    <AuthGuard>
+      <AnthropometryForm />
+    </AuthGuard>
   );
 }
