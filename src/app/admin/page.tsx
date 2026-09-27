@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import { useAuth } from "@/context/AuthContext";
@@ -311,8 +311,8 @@ function AdminUsersScreen() {
                 </thead>
                 <tbody>
                   {users.map((u) => (
-                    <>
-                      <tr key={u.id} className="border-t border-outline-variant/40">
+                    <Fragment key={u.id}>
+                      <tr className="border-t border-outline-variant/40">
                         <td className="px-space-md py-space-sm font-body text-body-md text-on-surface">
                           {u.username}
                         </td>
@@ -466,7 +466,7 @@ function AdminUsersScreen() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

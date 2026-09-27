@@ -13,7 +13,12 @@ export default function SiteHeader() {
     ? [
         { href: "/dashboard", label: "Dashboard" },
         { href: "/anthropometry", label: "Nuevo reporte antropométrico" },
-        ...(user.rol === "superadmin" ? [{ href: "/admin", label: "Usuarios" }] : []),
+        ...(user.rol === "superadmin"
+          ? [
+              { href: "/admin", label: "Usuarios" },
+              { href: "/admin/alimentos", label: "Catálogo de alimentos" },
+            ]
+          : []),
       ]
     : [];
 
@@ -38,7 +43,10 @@ export default function SiteHeader() {
 
         <nav className="hidden lg:flex items-center gap-space-sm p-space-xs bg-surface-container rounded-xl empty:hidden">
           {navItems.map((item) => {
-            const active = pathname?.startsWith(item.href);
+            const active =
+              item.href === "/admin"
+                ? pathname === "/admin"
+                : pathname === item.href || pathname?.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.href}
